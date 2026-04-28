@@ -1,0 +1,254 @@
+.__tianai-container {
+    height: 100%;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 999;
+}
+
+.__tianai-content {
+    border-radius: 6px;
+    background-color: #fff;
+    padding:12px;
+    position: relative;
+    z-index: 1000;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.65);
+    min-height: 250px;
+    transition: height 0.3s ease;
+    user-select: none;
+}
+
+.__tianai-content > .__tianai-content-title {
+    display: flex;
+    flex-direction: row;
+    font-weight: bold;
+}
+
+.__tianai-content-title > .__tianai-content-title-text {
+    flex: 1 1 100%;
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.__tianai-content > .__tianai-content-image-wrapper {
+    position: relative;
+    margin-top:12px;
+}
+
+.__tianai-content > .__tianai-content-image-wrapper > .__tianai-content-image-wrapper-alert {
+    position: absolute;
+    width: 100%;
+    bottom: 0;
+    right: 0;
+    padding: 4px;
+    box-sizing: border-box;
+    text-align: center;
+    z-index: 998;
+}
+
+.__tianai-content > .__tianai-content-image-wrapper > .__tianai-content-image-wrapper-alert.success {
+    background-color: rgba(246,255,237, 0.9);
+    border: 1px solid #b7eb8f;
+}
+
+.__tianai-content > .__tianai-content-image-wrapper > .__tianai-content-image-wrapper-alert.error {
+    background-color: rgba(255, 242, 240, 0.9);
+    border: 1px solid #ffccc7;
+}
+
+.__tianai-content > .__tianai-content-image-wrapper > .__tianai-content-image-bg {
+    width: 100%;
+    height: 100%;
+}
+
+.__tianai-content > .__tianai-content-image-wrapper > .__tianai-content-image-bg > img {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.__tianai-content > .__tianai-content-image-wrapper > .__tianai-content-target {
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.__tianai-content > .__tianai-content-image-wrapper > .__tianai-content-target.rotate {
+    left: 50% !important;
+    transform: translateX(-50%);
+}
+
+.__tianai-content > .__tianai-content-image-wrapper > .__tianai-content-target.concat {
+    width: 100%;
+    transform: translate(0px, 0px);
+}
+
+.__tianai-content > .__tianai-content-image-wrapper > .__tianai-content-target img {
+    height: 100%;
+}
+
+.__tianai-content > .__tianai-slider-move {
+    margin-top:12px;
+    height: 46px;
+    width: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.__tianai-content > .__tianai-slider-move .__tianai-slider-move-track {
+    line-height: 32px;
+    text-align: center;
+    white-space: nowrap;
+    background-color: #eeeeee;
+    border-radius: 18px;
+    position: relative;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    flex: 1 1 100%;
+    overflow: hidden;
+}
+
+.__tianai-content > .__tianai-slider-move .__tianai-slider-move-track::before {
+    content: '';
+    position: absolute;
+    background-image: linear-gradient(.25turn, rgba(0,0,0,0), rgba(255,255,255,0.5));
+    animation: slide 3s linear infinite;
+    height: 100%;
+    width: 50%;
+}
+
+@keyframes slide {
+    0%, 50% {
+        left: -50%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+.__tianai-btn {
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    transform: translate(0px, 0px);
+    background-color: #f8f8f8;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease,border 0.3s ease, box-shadow 0.3s ease;
+}
+.__tianai-btn:hover {
+    cursor: pointer;
+    background-color: #fff;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.__tianai-content > .__tianai-slider-move > .__tianai-slider-move-btn {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 46px;
+    height: 46px;
+}
+
+.__tianai-content > .__tianai-slider-move > .__tianai-slider-move-btn::before {
+    height: 100%;
+    content: "\2192";
+    font-weight: bold;
+    display: flex;
+    justify-content: center; /* 水平居中 */
+    align-items: center; /* 垂直居中 */
+    font-size: 18px;
+}
+
+.__tianai-content > .__tianai-operating {
+    margin-top: 8px;
+    display: flex;
+}
+
+.__tianai-content > .__tianai-operating > .__tianai-operating-merchant {
+    flex: 1 1 100%;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    margin-left: 6px;
+    font-size: 15px;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.__tianai-content > .__tianai-operating > .__tianai-operating-btn {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+}
+
+.__tianai-content > .__tianai-operating > .__tianai-operating-btn div {
+    padding:6px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center; /* 水平居中 */
+    align-items: center; /* 垂直居中 */
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.__tianai-content > .__tianai-operating > .__tianai-operating-btn div:not(:last-child) {
+    margin-right: 8px;
+}
+
+.__tianai-content > .__tianai-operating > .__tianai-operating-btn .__tianai-operating-close-btn:before {
+    content: '\2715';
+}
+.__tianai-content > .__tianai-operating > .__tianai-operating-btn .__tianai-operating-refresh-btn:before {
+    content: '\21BB';
+}
+
+.__tianai-content > .__tianai-content-loading .__tianai-content-loading-text{
+    text-align: center;
+}
+
+.__tianai-content > .__tianai-content-loading {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    border-radius: 6px;
+    background-color: rgba(255,255,255, 0.5);
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.__tianai-content > .__tianai-content-loading .__tianai-content-loading-loader {
+    border: 4px solid #d7d7d7;
+    border-top: 4px solid #88949d;
+    border-radius: 50%;
+    padding: 10%;
+    animation: spin 2s linear infinite; /* 创建旋转动画 */
+}
+
+.__tianai-content > .__tianai-content-loading .__tianai-content-loading-text {
+    margin-top: 12px;
+}
+
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg); /* 起始角度 */
+    }
+    100% {
+        transform: rotate(360deg); /* 终止角度，一周360度 */
+    }
+}
