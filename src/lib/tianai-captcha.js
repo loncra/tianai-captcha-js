@@ -29,6 +29,14 @@ class TianaiCaptcha {
 
     this.http = axios.create({baseURL:this.config.baseUrl});
 
+    // 与 validValue 解耦的稳定引用，否则 doGenerateHtml 重置 validValue 后 removeEventListener 无法成对移除
+    this._onGlobalPointerMove = this.move.bind(this);
+    this._onGlobalPointerUp = this.up.bind(this);
+    this._onSliderDown = this.sliderDown.bind(this);
+    this._globalPointerCapture = true;
+    this._pointerDragEl = null;
+    this._pointerCaptureId = null;
+
     this.containerTemplate = `<div class="__tianai-container" id="tianai-container"></div>`
 
     this.contentTemplate = `
@@ -142,7 +150,7 @@ class TianaiCaptcha {
         .catch((e) => {
           if (e.response.data) {
             const data = e.response.data;
-            if (e.response.data.executeCode && e.response.data.executeCode === '10404') {
+            if (data.executeCode && data.executeCode === '10404') {
               axios.get(this.config.baseUrl + "/captcha/generateToken?type=tianai").then(r => {
                 this.config.token = r.data.data.token.name;
                 this.generateCaptcha(lading);
@@ -158,6 +166,7 @@ class TianaiCaptcha {
   doGenerateHtml(data) {
     this.generateData = data;
     this.removeLoading();
+    this.detachGlobalPointerListeners();
 
     const tianaiTitle = document.getElementById("tianai-content-title");
 
@@ -165,8 +174,12 @@ class TianaiCaptcha {
     if (!sliderMoveBtn) {
       tianaiTitle.insertAdjacentHTML('afterend',this.contentOperate);
       sliderMoveBtn = document.getElementById("tianai-slider-move-btn");
-      sliderMoveBtn.addEventListener("mousedown", this.sliderDown.bind(this));
-      sliderMoveBtn.addEventListener("touchstart", this.sliderDown.bind(this));
+      if (typeof window !== "undefined" && window.PointerEvent) {
+        sliderMoveBtn.addEventListener("pointerdown", this._onSliderDown, { passive: false });
+      } else {
+        sliderMoveBtn.addEventListener("mousedown", this._onSliderDown);
+        sliderMoveBtn.addEventListener("touchstart", this._onSliderDown, { passive: false });
+      }
 
       const refreshBtn = document.getElementById("tianai-operating-refresh-btn");
       refreshBtn.addEventListener("click", this.generateCaptcha.bind(this));
@@ -178,6 +191,8 @@ class TianaiCaptcha {
         merchant.innerHTML = data.merchantName || '';
       }
     }
+
+    this.applySliderTouchStyle(sliderMoveBtn);
 
     let wrapper = document.getElementById("tianai-content-image-wrapper");
     if (!wrapper) {
@@ -320,18 +335,94 @@ class TianaiCaptcha {
     if (!target) {
       return ;
     }
+    this.detachGlobalPointerListeners();
     this.fadeOut(target);
   }
+  detachGlobalPointerListeners() {
+    if (this._pointerDragEl) {
+      this._pointerDragEl.removeEventListener("pointermove", this._onGlobalPointerMove);
+      this._pointerDragEl.removeEventListener("pointerup", this._onGlobalPointerUp);
+      this._pointerDragEl.removeEventListener("pointercancel", this._onGlobalPointerUp);
+      if (this._pointerCaptureId != null) {
+        try {
+          if (this._pointerDragEl.hasPointerCapture && this._pointerDragEl.hasPointerCapture(this._pointerCaptureId)) {
+            this._pointerDragEl.releasePointerCapture(this._pointerCaptureId);
+          }
+        } catch (_) { /* noop */ }
+      }
+      this._pointerDragEl = null;
+      this._pointerCaptureId = null;
+    }
+    const cap = this._globalPointerCapture;
+    const touchOpts = { capture: cap, passive: false };
+    document.removeEventListener("mousemove", this._onGlobalPointerMove, cap);
+    document.removeEventListener("mouseup", this._onGlobalPointerUp, cap);
+    document.removeEventListener("touchmove", this._onGlobalPointerMove, touchOpts);
+    document.removeEventListener("touchend", this._onGlobalPointerUp, cap);
+    document.removeEventListener("touchcancel", this._onGlobalPointerUp, cap);
+  }
+  applySliderTouchStyle(sliderMoveBtn) {
+    if (!sliderMoveBtn) {
+      return;
+    }
+    sliderMoveBtn.style.touchAction = "none";
+    sliderMoveBtn.style.webkitUserSelect = "none";
+    sliderMoveBtn.style.userSelect = "none";
+    const row = sliderMoveBtn.parentElement;
+    if (row) {
+      row.style.touchAction = "none";
+    }
+  }
+  getPointerPageXY(source) {
+    if (!source) {
+      return { x: 0, y: 0 };
+    }
+    let x = source.pageX;
+    let y = source.pageY;
+    if (x == null || y == null) {
+      const sx = window.scrollX != null ? window.scrollX : window.pageXOffset;
+      const sy = window.scrollY != null ? window.scrollY : window.pageYOffset;
+      x = source.clientX + sx;
+      y = source.clientY + sy;
+    }
+    return { x: Math.round(x), y: Math.round(y) };
+  }
   sliderDown(event) {
+    if (typeof window !== "undefined" && window.PointerEvent && event instanceof PointerEvent) {
+      if (!event.isPrimary) {
+        return;
+      }
+      if (event.pointerType === "mouse" && event.button !== 0) {
+        return;
+      }
+    } else if (event.type === "mousedown" && event.button !== 0) {
+      return;
+    }
 
-    let targetTouches = event.originalEvent ? event.originalEvent.targetTouches : event.targetTouches;
+    if (event.cancelable) {
+      const isTouchLike =
+        event.type === "touchstart" ||
+        (typeof window !== "undefined" && window.PointerEvent && event instanceof PointerEvent && event.pointerType === "touch");
+      if (isTouchLike) {
+        event.preventDefault();
+      }
+    }
 
-    let startX = event.pageX;
-    let startY = event.pageY;
-
-    if (startX === undefined) {
-      startX = Math.round(targetTouches[0].pageX);
-      startY = Math.round(targetTouches[0].pageY);
+    let startX;
+    let startY;
+    if (typeof window !== "undefined" && window.PointerEvent && event instanceof PointerEvent) {
+      const p = this.getPointerPageXY(event);
+      startX = p.x;
+      startY = p.y;
+    } else if (typeof TouchEvent !== "undefined" && event instanceof TouchEvent) {
+      const touch = (event.targetTouches && event.targetTouches[0]) || event.touches[0];
+      const p = this.getPointerPageXY(touch);
+      startX = p.x;
+      startY = p.y;
+    } else {
+      const p = this.getPointerPageXY(event);
+      startX = p.x;
+      startY = p.y;
     }
 
     this.validValue.startX = startX;
@@ -350,22 +441,49 @@ class TianaiCaptcha {
       t: (new Date().getTime() - startTime.getTime())
     });
 
-    this.validValue.mouseMoveFunction = this.move.bind(this);
-    this.validValue.mouseUpFunction = this.up.bind(this);
+    this.detachGlobalPointerListeners();
 
-    // pc
-    window.addEventListener("mousemove", this.validValue.mouseMoveFunction);
-    window.addEventListener("mouseup", this.validValue.mouseUpFunction);
-    // 手机端
-    window.addEventListener("touchmove", this.validValue.mouseMoveFunction, false);
-    window.addEventListener("touchend", this.validValue.mouseUpFunction, false);
+    const usePointerPath = typeof window !== "undefined" && window.PointerEvent && event instanceof PointerEvent;
+    if (usePointerPath) {
+      const target = event.currentTarget;
+      try {
+        target.setPointerCapture(event.pointerId);
+      } catch (_) { /* noop */ }
+      this._pointerDragEl = target;
+      this._pointerCaptureId = event.pointerId;
+      target.addEventListener("pointermove", this._onGlobalPointerMove);
+      target.addEventListener("pointerup", this._onGlobalPointerUp);
+      target.addEventListener("pointercancel", this._onGlobalPointerUp);
+      return;
+    }
+
+    const cap = this._globalPointerCapture;
+    const touchOpts = { capture: cap, passive: false };
+    document.addEventListener("mousemove", this._onGlobalPointerMove, cap);
+    document.addEventListener("mouseup", this._onGlobalPointerUp, cap);
+    document.addEventListener("touchmove", this._onGlobalPointerMove, touchOpts);
+    document.addEventListener("touchend", this._onGlobalPointerUp, cap);
+    document.addEventListener("touchcancel", this._onGlobalPointerUp, cap);
   }
   move(event) {
-    if (event instanceof TouchEvent) {
-      event = event.touches[0];
+    let pointer = event;
+    if (typeof TouchEvent !== "undefined" && event instanceof TouchEvent) {
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      pointer = event.touches[0] || event.changedTouches[0];
+      if (!pointer) {
+        return;
+      }
+    } else if (typeof window !== "undefined" && window.PointerEvent && event instanceof PointerEvent) {
+      if (event.pointerType === "touch" && event.cancelable) {
+        event.preventDefault();
+      }
+      pointer = event;
     }
-    let pageX = Math.round(event.pageX);
-    let pageY = Math.round(event.pageY);
+    const xy = this.getPointerPageXY(pointer);
+    let pageX = xy.x;
+    let pageY = xy.y;
 
     const startX = this.validValue.startX;
     const startY = this.validValue.startY;
@@ -408,21 +526,27 @@ class TianaiCaptcha {
     document.getElementById("tianai-image-content-target").style.backgroundPositionX = moveX + "px";
   }
   up(event) {
+    this.detachGlobalPointerListeners();
 
-    window.removeEventListener("mousemove", this.validValue.mouseMoveFunction);
-    window.removeEventListener("mouseup", this.validValue.mouseUpFunction);
-
-    window.removeEventListener("touchmove", this.validValue.mouseMoveFunction);
-    window.removeEventListener("touchend", this.validValue.mouseUpFunction);
-
-    if (event instanceof TouchEvent) {
-      event = event.changedTouches[0];
+    let pointer = event;
+    if (event && typeof TouchEvent !== "undefined" && event instanceof TouchEvent) {
+      pointer = event.changedTouches[0] || event.touches[0];
+    } else if (event && typeof window !== "undefined" && window.PointerEvent && event instanceof PointerEvent) {
+      pointer = event;
     }
 
     this.validValue.stopTime = new Date();
 
-    let pageX = Math.round(event.pageX);
-    let pageY = Math.round(event.pageY);
+    let pageX;
+    let pageY;
+    if (pointer) {
+      const xy = this.getPointerPageXY(pointer);
+      pageX = xy.x;
+      pageY = xy.y;
+    } else {
+      pageX = Math.round(this.validValue.startX + (this.validValue.moveX || 0));
+      pageY = Math.round(this.validValue.startY);
+    }
 
     const startX = this.validValue.startX;
     const startY = this.validValue.startY;
