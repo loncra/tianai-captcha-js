@@ -7,9 +7,10 @@ export default defineConfig({
   build: {
     lib: {
       entry: './src/lib/tianai-captcha.js',
-      name: 'Tianai Captcha JS SDK',
-      fileName: 'tianai-captcha'
-    }
+      name: 'TianaiCaptcha',
+      fileName: 'tianai-captcha',
+      formats: ['es', 'umd'],
+    },
   }
 })
 

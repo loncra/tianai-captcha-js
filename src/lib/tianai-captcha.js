@@ -185,7 +185,7 @@ class TianaiCaptcha {
       refreshBtn.addEventListener("click", this.generateCaptcha.bind(this));
 
       const closeBtn = document.getElementById("tianai-operating-close-btn");
-      closeBtn.addEventListener("click", this.hide.bind(this));
+      closeBtn.addEventListener("click", this.cancel.bind(this));
       if (this.config.showMerchantName && data.merchantName) {
         const merchant = document.getElementById("tianai-operating-merchant");
         merchant.innerHTML = data.merchantName || '';
@@ -329,6 +329,16 @@ class TianaiCaptcha {
     }
 
     return param;
+  }
+  cancel(e) {
+    const cancelFn = this.config?.cancel;
+    if (typeof cancelFn === 'function') {
+      const hide = cancelFn.call(this.config);
+      if (hide === false) {
+        return;
+      }
+    }
+    this.hide(e);
   }
   hide(e) {
     const target = document.getElementById("tianai-container");
@@ -662,6 +672,4 @@ class TianaiCaptcha {
   }
 }
 
-export {
-  TianaiCaptcha
-}
+export default TianaiCaptcha
